@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+
 import {
   Paper,
   Typography,
@@ -7,6 +10,8 @@ import {
   Button,
   Divider,
   Link,
+  MenuItem,
+  Alert,
 } from "@mui/material";
 
 import {
@@ -17,14 +22,64 @@ import {
 
 import PasswordField from "./PasswordField";
 
+import { registerUser } from "../../services/authService";
+
 const RegisterForm = () => {
-  const handleSubmit = (e) => {
+  const navigate = useNavigate();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("Register Button Clicked");
-  };
+    setError("");
 
-  return (
+    if (
+      !name ||
+      !email ||
+      !role ||
+      !password ||
+      !confirmPassword
+    ) {
+      setError("Please fill all fields.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await registerUser({
+        name,
+        email,
+        password,
+        role,
+      });
+
+      alert("Registration Successful!");
+
+      navigate("/login");
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Registration failed."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+    return (
     <Paper
       elevation={8}
       sx={{
@@ -37,10 +92,7 @@ const RegisterForm = () => {
         boxShadow: "0 25px 60px rgba(0,0,0,.15)",
       }}
     >
-      <Typography
-        variant="h4"
-        fontWeight={700}
-      >
+      <Typography variant="h4" fontWeight={700}>
         Create Account 🚀
       </Typography>
 
@@ -54,6 +106,12 @@ const RegisterForm = () => {
         Join CareerForge and start building your career.
       </Typography>
 
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
       <Stack
         component="form"
         spacing={3}
@@ -65,6 +123,8 @@ const RegisterForm = () => {
           fullWidth
           label="Full Name"
           placeholder="Enter your full name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -85,6 +145,8 @@ const RegisterForm = () => {
           fullWidth
           label="Email Address"
           placeholder="Enter your email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -105,26 +167,17 @@ const RegisterForm = () => {
           select
           fullWidth
           label="Register As"
-          defaultValue=""
-          SelectProps={{
-            native: true,
-          }}
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
           sx={{
             "& .MuiOutlinedInput-root": {
               borderRadius: 3,
             },
           }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Business color="primary" />
-              </InputAdornment>
-            ),
-          }}
         >
-          <option value=""></option>
-          <option value="Student">Student</option>
-          <option value="Company">Company</option>
+          <MenuItem value="">Select Role</MenuItem>
+          <MenuItem value="Student">Student</MenuItem>
+          <MenuItem value="Company">Company</MenuItem>
         </TextField>
 
         {/* Password */}
@@ -132,6 +185,8 @@ const RegisterForm = () => {
         <PasswordField
           label="Password"
           placeholder="Create a password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
         />
 
         {/* Confirm Password */}
@@ -139,13 +194,18 @@ const RegisterForm = () => {
         <PasswordField
           label="Confirm Password"
           placeholder="Confirm your password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
         />
+
+        {/* Register Button */}
 
         <Button
           type="submit"
           variant="contained"
           fullWidth
           size="large"
+          disabled={loading}
           sx={{
             py: 1.6,
             borderRadius: 3,
@@ -153,7 +213,6 @@ const RegisterForm = () => {
             fontSize: 16,
             background:
               "linear-gradient(135deg,#2563EB,#1D4ED8)",
-
             boxShadow:
               "0 12px 25px rgba(37,99,235,.35)",
 
@@ -164,7 +223,7 @@ const RegisterForm = () => {
             },
           }}
         >
-          Create Account
+          {loading ? "Creating Account..." : "Create Account"}
         </Button>
 
         <Divider>OR</Divider>
@@ -175,7 +234,8 @@ const RegisterForm = () => {
         >
           Already have an account?{" "}
           <Link
-            href="/login"
+            component={RouterLink}
+            to="/login"
             underline="hover"
             fontWeight={600}
           >

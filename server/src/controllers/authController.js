@@ -1,7 +1,8 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
+import crypto from "crypto";
+import sendEmail from "../utils/sendEmail.js";
 // ======================
 // Register User
 // ======================
@@ -19,14 +20,29 @@ export const registerUser = async(req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-
+        const verificationToken =
+            crypto.randomBytes(32).toString("hex");
         const user = await User.create({
             name,
             email,
             password: hashedPassword,
             role,
+            verificationToken,
         });
 
+        const verificationLink =
+            `http://localhost:5000/api/auth/verify-email/${verificationToken}`;
+
+        console.log("Verification Link:", verificationLink);
+
+        await sendEmail(
+            email,
+            "Verify Your Email",
+            `Click here to verify your email:\n${verificationLink}`
+        );
+
+
+        console.log("Email sent successfully");
         res.status(201).json({
             success: true,
             message: "User registered successfully",
@@ -158,4 +174,39 @@ export const adminDashboard = async(req, res) => {
         user: req.user,
     });
 
+};
+// ======================
+// Verify Email
+// ======================
+export const verifyEmail = async(req, res) => {
+    try {
+        const { token } = req.params;
+
+        const user = await User.findOne({
+            verificationToken: token,
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid or expired verification token",
+            });
+        }
+
+        user.isVerified = true;
+        user.verificationToken = "";
+
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Email verified successfully",
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
 };

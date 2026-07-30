@@ -33,10 +33,21 @@ const userSchema = new mongoose.Schema({
         default: "",
     },
 
+    resume: {
+        type: String,
+        default: "",
+    },
+
     isVerified: {
         type: Boolean,
         default: false,
     },
+
+    verificationToken: {
+        type: String,
+        default: "",
+    },
+
 }, {
     timestamps: true,
 });

@@ -15,9 +15,17 @@ import {
 const PasswordField = ({
   label = "Password",
   placeholder = "Enter your password",
+
+  // React Hook Form
   register,
-  error,
-  helperText,
+  name,
+
+  // Controlled component (future use)
+  value,
+  onChange,
+
+  error = false,
+  helperText = "",
 }) => {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -27,7 +35,9 @@ const PasswordField = ({
       label={label}
       placeholder={placeholder}
       type={showPassword ? "text" : "password"}
-      {...register}
+      {...(register && name ? register(name) : {})}
+      value={value}
+      onChange={onChange}
       error={error}
       helperText={helperText}
       sx={{
