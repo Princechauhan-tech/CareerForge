@@ -1,15 +1,13 @@
 import User from "../models/User.js";
+import ApiError from "../utils/ApiError.js";
 
-export const uploadResume = async(req, res) => {
+export const uploadResume = async(req, res, next) => {
     try {
 
         const student = await User.findById(req.user.id);
 
         if (!student) {
-            return res.status(404).json({
-                success: false,
-                message: "Student not found",
-            });
+            return next(new ApiError(404, "Student not found"));
         }
 
         if (req.file) {
@@ -25,9 +23,6 @@ export const uploadResume = async(req, res) => {
         });
 
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message,
-        });
+        next(error);
     }
 };

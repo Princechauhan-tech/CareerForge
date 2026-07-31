@@ -3,25 +3,25 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import sendEmail from "../utils/sendEmail.js";
+import ApiError from "../utils/ApiError.js";
+
 // ======================
 // Register User
 // ======================
-export const registerUser = async(req, res) => {
+export const registerUser = async(req, res, next) => {
     try {
         const { name, email, password, role } = req.body;
 
         const existingUser = await User.findOne({ email });
 
         if (existingUser) {
-            return res.status(400).json({
-                success: false,
-                message: "User already exists",
-            });
+            return next(new ApiError(400, "User already exists"));
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const verificationToken =
-            crypto.randomBytes(32).toString("hex");
+
+        const verificationToken = crypto.randomBytes(32).toString("hex");
+
         const user = await User.create({
             name,
             email,
@@ -30,8 +30,7 @@ export const registerUser = async(req, res) => {
             verificationToken,
         });
 
-        const verificationLink =
-            `http://localhost:5000/api/auth/verify-email/${verificationToken}`;
+        const verificationLink = `http://localhost:5000/api/auth/verify-email/${verificationToken}`;
 
         console.log("Verification Link:", verificationLink);
 
@@ -41,8 +40,8 @@ export const registerUser = async(req, res) => {
             `Click here to verify your email:\n${verificationLink}`
         );
 
-
         console.log("Email sent successfully");
+
         res.status(201).json({
             success: true,
             message: "User registered successfully",
@@ -53,38 +52,28 @@ export const registerUser = async(req, res) => {
                 role: user.role,
             },
         });
-
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
+        next(error);
     }
 };
 
 // ======================
 // Login User
 // ======================
-export const loginUser = async(req, res) => {
+export const loginUser = async(req, res, next) => {
     try {
         const { email, password } = req.body;
 
         const user = await User.findOne({ email }).select("+password");
 
         if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid email or password",
-            });
+            return next(new ApiError(401, "Invalid email or password"));
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid email or password",
-            });
+            return next(new ApiError(401, "Invalid email or password"));
         }
 
         const token = jwt.sign({
@@ -107,78 +96,68 @@ export const loginUser = async(req, res) => {
                 role: user.role,
             },
         });
-
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
+        next(error);
     }
 };
 
 // ======================
 // Get Profile
 // ======================
-export const getProfile = async(req, res) => {
+export const getProfile = async(req, res, next) => {
     try {
-
         const user = await User.findById(req.user.id).select("-password");
 
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found",
-            });
+            return next(new ApiError(404, "User not found"));
         }
 
         res.status(200).json({
             success: true,
             user,
         });
-
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
+        next(error);
     }
 };
-// Student Dashboard
-export const studentDashboard = async(req, res) => {
 
+// ======================
+// Student Dashboard
+// ======================
+export const studentDashboard = async(req, res) => {
     res.status(200).json({
         success: true,
         message: "Welcome Student Dashboard",
         user: req.user,
     });
-
 };
 
+// ======================
 // Company Dashboard
+// ======================
 export const companyDashboard = async(req, res) => {
-
     res.status(200).json({
         success: true,
         message: "Welcome Company Dashboard",
         user: req.user,
     });
-
 };
 
+// ======================
 // Admin Dashboard
+// ======================
 export const adminDashboard = async(req, res) => {
-
     res.status(200).json({
         success: true,
         message: "Welcome Admin Dashboard",
         user: req.user,
     });
-
 };
+
 // ======================
 // Verify Email
 // ======================
-export const verifyEmail = async(req, res) => {
+export const verifyEmail = async(req, res, next) => {
     try {
         const { token } = req.params;
 
@@ -187,10 +166,9 @@ export const verifyEmail = async(req, res) => {
         });
 
         if (!user) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid or expired verification token",
-            });
+            return next(
+                new ApiError(400, "Invalid or expired verification token")
+            );
         }
 
         user.isVerified = true;
@@ -202,11 +180,7 @@ export const verifyEmail = async(req, res) => {
             success: true,
             message: "Email verified successfully",
         });
-
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
+        next(error);
     }
 };

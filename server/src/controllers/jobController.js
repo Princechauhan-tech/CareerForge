@@ -1,3 +1,4 @@
+import cache from "../services/cacheService.js";
 import Job from "../models/Job.js";
 import Company from "../models/Company.js";
 
@@ -49,6 +50,8 @@ export const createJob = async(req, res) => {
             vacancies,
             applicationDeadline,
         });
+        cache.del("allJobs");
+        console.log("🗑 Cache Cleared");
 
         return res.status(201).json({
             success: true,
@@ -74,7 +77,8 @@ Private (Company)
 export const updateJob = async(req, res) => {
     try {
         const job = await Job.findById(req.params.id);
-
+        cache.del("allJobs");
+        console.log("🗑 Cache Cleared");
         if (!job) {
             return res.status(404).json({
                 success: false,
@@ -123,7 +127,8 @@ Private (Company)
 export const deleteJob = async(req, res) => {
     try {
         const job = await Job.findById(req.params.id);
-
+        cache.del("allJobs");
+        console.log("🗑 Cache Cleared");
         if (!job) {
             return res.status(404).json({
                 success: false,
@@ -162,15 +167,38 @@ Public
 */
 export const getAllJobs = async(req, res) => {
     try {
+
+        console.log("Cache Keys:", cache.keys());
+
+        const cachedJobs = cache.get("allJobs");
+
+        if (cachedJobs) {
+            console.log("⚡ Jobs fetched from Cache");
+
+            return res.status(200).json({
+                success: true,
+                source: "cache",
+                count: cachedJobs.length,
+                jobs: cachedJobs,
+            });
+        }
+
         const jobs = await Job.find()
             .populate("company")
             .sort({ createdAt: -1 });
 
+        cache.set("allJobs", jobs);
+
+        console.log("✅ Cache Saved");
+        console.log("📦 Jobs fetched from Database");
+
         return res.status(200).json({
             success: true,
+            source: "database",
             count: jobs.length,
             jobs,
         });
+
     } catch (error) {
         return res.status(500).json({
             success: false,
