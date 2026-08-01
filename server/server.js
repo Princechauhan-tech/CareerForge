@@ -1,4 +1,6 @@
 import dotenv from "dotenv";
+import { createServer } from "http";
+import { Server } from "socket.io";
 dotenv.config();
 console.log("SERVER CLOUD:", process.env.CLOUDINARY_CLOUD_NAME);
 console.log("SERVER KEY:", process.env.CLOUDINARY_API_KEY);
@@ -29,7 +31,29 @@ const PORT = process.env.PORT || 5000;
 // Connect Database
 connectDB();
 
+// Create HTTP Server
+const httpServer = createServer(app);
+
+// Create Socket.IO Server
+const io = new Server(httpServer, {
+    cors: {
+        origin: "http://localhost:5173",
+        methods: ["GET", "POST"],
+    },
+});
+
+// Socket Connection
+io.on("connection", (socket) => {
+    console.log("🟢 User Connected:", socket.id);
+
+    socket.on("disconnect", () => {
+        console.log("🔴 User Disconnected:", socket.id);
+    });
+});
+
 // Start Server
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
+
+export { io };

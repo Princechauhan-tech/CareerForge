@@ -3,6 +3,7 @@ import express from "express";
 import {
     applyJob,
     getMyApplications,
+    scheduleInterview,
 } from "../controllers/applicationController.js";
 
 import {
@@ -33,5 +34,18 @@ router.get(
     authorizeRoles("Student"),
     getMyApplications
 );
+/*
+========================================
+Schedule Interview
+PUT /api/applications/schedule/:applicationId
+Private (Company)
+========================================
+*/
 
+router.put(
+    "/schedule/:applicationId",
+    verifyToken,
+    authorizeRoles("Company"),
+    scheduleInterview
+);
 export default router;

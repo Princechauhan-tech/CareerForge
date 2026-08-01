@@ -18,9 +18,16 @@ const applicationSchema = new mongoose.Schema({
         ref: "Company",
         required: true,
     },
+
     status: {
         type: String,
-        enum: ["Pending", "Accepted", "Rejected"],
+        enum: [
+            "Pending",
+            "Interview Scheduled",
+            "Accepted",
+            "Rejected",
+            "Selected",
+        ],
         default: "Pending",
     },
 
@@ -30,6 +37,27 @@ const applicationSchema = new mongoose.Schema({
     },
 
     coverLetter: {
+        type: String,
+        default: "",
+    },
+
+    // Interview Fields
+
+    interviewDate: {
+        type: Date,
+    },
+
+    interviewMode: {
+        type: String,
+        enum: ["Online", "Offline"],
+    },
+
+    interviewLink: {
+        type: String,
+        default: "",
+    },
+
+    interviewLocation: {
         type: String,
         default: "",
     },

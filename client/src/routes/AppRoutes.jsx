@@ -12,7 +12,7 @@ import CompanyDashboard from "../pages/CompanyDashboard";
 import AdminDashboard from "../pages/AdminDashboard";
 
 import ProtectedRoute from "./ProtectedRoute";
-
+import Calendar from "../pages/Calendar";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -54,6 +54,14 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+  path="/calendar"
+  element={
+    <ProtectedRoute>
+      <Calendar />
+    </ProtectedRoute>
+  }
+/>
 
       {/* 404 */}
       <Route path="*" element={<NotFound />} />

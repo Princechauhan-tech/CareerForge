@@ -50,6 +50,15 @@ const Navbar = () => {
         >
           Home
         </Link>
+        <Link
+  to="/calendar"
+  style={{
+    color: "white",
+    textDecoration: "none",
+  }}
+>
+  Calendar
+</Link>
 
         {!isAuthenticated ? (
           <>
