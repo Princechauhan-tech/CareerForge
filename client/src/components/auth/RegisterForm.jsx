@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-
+import Loader from "../common/Loader";
+import { motion } from "framer-motion";
+import { CircularProgress } from "@mui/material";
 import {
   Paper,
   Typography,
@@ -79,7 +81,19 @@ const RegisterForm = () => {
       setLoading(false);
     }
   };
+  if (loading) {
+  return <Loader text="Creating Account..." />;
+}
+    
     return (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{
+      duration: 0.6,
+      ease: "easeOut",
+    }}
+  >
     <Paper
       elevation={8}
       sx={{
@@ -92,7 +106,16 @@ const RegisterForm = () => {
         boxShadow: "0 25px 60px rgba(0,0,0,.15)",
       }}
     >
-      <Typography variant="h4" fontWeight={700}>
+      <Typography
+  variant="h4"
+  fontWeight={700}
+  sx={{
+    fontSize: {
+      xs: "1.8rem",
+      sm: "2.125rem",
+    },
+  }}
+>
         Create Account 🚀
       </Typography>
 
@@ -223,7 +246,11 @@ const RegisterForm = () => {
             },
           }}
         >
-          {loading ? "Creating Account..." : "Create Account"}
+          {loading ? (
+  <CircularProgress size={24} color="inherit" />
+) : (
+  "Create Account"
+)}
         </Button>
 
         <Divider>OR</Divider>
@@ -244,6 +271,7 @@ const RegisterForm = () => {
         </Typography>
       </Stack>
     </Paper>
+    </motion.div>
   );
 };
 

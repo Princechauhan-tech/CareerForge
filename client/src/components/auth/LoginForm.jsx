@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-
+import Loader from "../common/Loader";
+import { CircularProgress } from "@mui/material";
+import { motion } from "framer-motion";
 import {
   Paper,
   Typography,
@@ -83,20 +85,48 @@ const LoginForm = () => {
       );
     }
   };
+  if (loading) {
+  return <Loader text="Signing In..." />;
+}
   return (
-  <Paper
-    elevation={8}
-    sx={{
-      width: "100%",
-      maxWidth: 480,
-      p: 5,
-      borderRadius: 5,
-      bgcolor: "rgba(255,255,255,.95)",
-      backdropFilter: "blur(18px)",
-      boxShadow: "0 25px 60px rgba(0,0,0,.15)",
+  <motion.div
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{
+      duration: 0.6,
+      ease: "easeOut",
     }}
   >
-    <Typography variant="h4" fontWeight={700}>
+    <Paper
+      elevation={8}
+      sx={{
+        width: "100%",
+        maxWidth: 480,
+        p: {
+          xs: 3,
+          sm: 4,
+          md: 5,
+        },
+        borderRadius: {
+          xs: 3,
+          sm: 4,
+          md: 5,
+        },
+        bgcolor: "rgba(255,255,255,.95)",
+        backdropFilter: "blur(18px)",
+        boxShadow: "0 25px 60px rgba(0,0,0,.15)",
+      }}
+    >
+    <Typography
+  variant="h4"
+  fontWeight={700}
+  sx={{
+    fontSize: {
+      xs: "1.8rem",
+      sm: "2.125rem",
+    },
+  }}
+>
       Welcome Back 👋
     </Typography>
 
@@ -132,7 +162,11 @@ const LoginForm = () => {
         helperText={errors.email?.message}
         sx={{
           "& .MuiOutlinedInput-root": {
-            borderRadius: 3,
+            borderRadius: {
+              xs: 3,
+              sm: 4,
+              md: 5,
+            },
           },
         }}
         InputProps={{
@@ -158,10 +192,17 @@ const LoginForm = () => {
       {/* Remember Me */}
 
       <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-      >
+  direction={{
+    xs: "column",
+    sm: "row",
+  }}
+  justifyContent="space-between"
+  alignItems={{
+    xs: "flex-start",
+    sm: "center",
+  }}
+  spacing={1}
+>
         <FormControlLabel
           control={
             <Checkbox
@@ -182,31 +223,26 @@ const LoginForm = () => {
       {/* Login Button */}
 
       <Button
-        type="submit"
-        variant="contained"
-        fullWidth
-        size="large"
-        disabled={loading}
-        sx={{
-          py: 1.6,
-          borderRadius: 3,
-          fontWeight: 700,
-          fontSize: 16,
-          background:
-            "linear-gradient(135deg,#2563EB,#1D4ED8)",
-
-          boxShadow:
-            "0 12px 25px rgba(37,99,235,.35)",
-
-          "&:hover": {
-            transform: "translateY(-2px)",
-            background:
-              "linear-gradient(135deg,#1D4ED8,#1E40AF)",
-          },
-        }}
-      >
-        {loading ? "Signing In..." : "Sign In"}
-      </Button>
+  type="submit"
+  variant="contained"
+  fullWidth
+  size="large"
+  disabled={loading}
+  sx={{
+    py: 1.6,
+    borderRadius: 3,
+    fontWeight: 700,
+    fontSize: 16,
+    background: "linear-gradient(135deg,#2563EB,#1D4ED8)",
+    boxShadow: "0 12px 25px rgba(37,99,235,.35)",
+    "&:hover": {
+      transform: "translateY(-2px)",
+      background: "linear-gradient(135deg,#1D4ED8,#1E40AF)",
+    },
+  }}
+>
+  Sign In
+</Button>
 
       <Divider>OR</Divider>
 
@@ -225,6 +261,7 @@ const LoginForm = () => {
       </Typography>
     </Stack>
   </Paper>
+  </motion.div>
 );
 };
 

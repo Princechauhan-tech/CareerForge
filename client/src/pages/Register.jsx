@@ -37,7 +37,14 @@ const Register = () => {
             },
           }}
         >
-          <RegisterForm />
+          <Box
+  sx={{
+    width: "100%",
+    maxWidth: 500,
+  }}
+>
+  <RegisterForm />
+</Box>
         </Grid>
       </Grid>
     </Box>

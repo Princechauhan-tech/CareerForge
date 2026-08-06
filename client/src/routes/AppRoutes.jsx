@@ -1,4 +1,5 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 
 import Layout from "../components/layout/Layout";
 
@@ -14,8 +15,13 @@ import AdminDashboard from "../pages/AdminDashboard";
 import ProtectedRoute from "./ProtectedRoute";
 import Calendar from "../pages/Calendar";
 const AppRoutes = () => {
+  const location = useLocation();
   return (
-    <Routes>
+    <AnimatePresence mode="wait">
+  <Routes
+    location={location}
+    key={location.pathname}
+  >
 
       {/* Website Layout */}
       <Route path="/" element={<Layout />}>
@@ -67,6 +73,7 @@ const AppRoutes = () => {
       <Route path="*" element={<NotFound />} />
 
     </Routes>
+</AnimatePresence>
   );
 };
 

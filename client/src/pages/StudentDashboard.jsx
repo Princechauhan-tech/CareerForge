@@ -7,7 +7,6 @@ const StudentDashboard = () => {
   useEffect(() => {
     socket.on("interviewScheduled", (data) => {
       console.log("📅 Interview Event:", data);
-
       setEvents((prev) => [data, ...prev]);
     });
 
@@ -17,8 +16,21 @@ const StudentDashboard = () => {
   }, []);
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Student Dashboard</h1>
+    <div
+      style={{
+        maxWidth: "1200px",
+        margin: "0 auto",
+        padding: "20px",
+      }}
+    >
+      <h1
+        style={{
+          fontSize: "clamp(2rem,5vw,3rem)",
+          marginBottom: "20px",
+        }}
+      >
+        🎓 Student Dashboard
+      </h1>
 
       <h2>Live Events</h2>
 
@@ -29,9 +41,11 @@ const StudentDashboard = () => {
           <div
             key={index}
             style={{
-              padding: "10px",
+              padding: "15px",
               border: "1px solid #ddd",
-              marginBottom: "10px",
+              borderRadius: "8px",
+              marginBottom: "12px",
+              wordBreak: "break-word",
             }}
           >
             📅 {event.message}

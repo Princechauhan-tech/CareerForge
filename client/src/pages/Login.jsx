@@ -37,9 +37,17 @@ const Login = () => {
               sm: 4,
               md: 6,
             },
+            width: "100%",
           }}
         >
-          <LoginForm />
+          <Box
+            sx={{
+              width: "100%",
+              maxWidth: 450,
+            }}
+          >
+            <LoginForm />
+          </Box>
         </Grid>
       </Grid>
     </Box>

@@ -7,7 +7,6 @@ const CompanyDashboard = () => {
   useEffect(() => {
     socket.on("newApplication", (data) => {
       console.log("🔔 Notification:", data);
-
       setNotifications((prev) => [data, ...prev]);
     });
 
@@ -17,8 +16,21 @@ const CompanyDashboard = () => {
   }, []);
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Company Dashboard</h1>
+    <div
+      style={{
+        maxWidth: "1200px",
+        margin: "0 auto",
+        padding: "20px",
+      }}
+    >
+      <h1
+        style={{
+          fontSize: "clamp(2rem,5vw,3rem)",
+          marginBottom: "20px",
+        }}
+      >
+        🏢 Company Dashboard
+      </h1>
 
       <h2>Notifications</h2>
 
@@ -29,10 +41,11 @@ const CompanyDashboard = () => {
           <div
             key={index}
             style={{
-              padding: "10px",
-              marginBottom: "10px",
+              padding: "15px",
+              marginBottom: "12px",
               border: "1px solid #ddd",
               borderRadius: "8px",
+              wordBreak: "break-word",
             }}
           >
             🔔 {notification.message}

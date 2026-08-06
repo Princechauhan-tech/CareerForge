@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { motion } from "framer-motion";
 import socket from "../services/socket";
 
 const Home = () => {
@@ -25,9 +26,19 @@ const Home = () => {
   }, []);
 
   return (
-    <div>
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
+      style={{
+        padding: "40px",
+        textAlign: "center",
+      }}
+    >
       <h1>🏠 CareerForge Home Page</h1>
-    </div>
+
+      <p>Welcome to CareerForge Job Portal.</p>
+    </motion.div>
   );
 };
 
