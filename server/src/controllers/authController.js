@@ -184,3 +184,4 @@ export const verifyEmail = async(req, res, next) => {
         next(error);
     }
 };
+

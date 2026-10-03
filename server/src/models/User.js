@@ -38,6 +38,66 @@ const userSchema = new mongoose.Schema({
         default: "",
     },
 
+    // Student profile fields
+    phone: {
+        type: String,
+        default: "",
+        trim: true,
+    },
+
+    location: {
+        type: String,
+        default: "",
+        trim: true,
+    },
+
+    headline: {
+        type: String,
+        default: "",
+        trim: true,
+    },
+
+    bio: {
+        type: String,
+        default: "",
+        trim: true,
+    },
+
+    skills: {
+        type: [String],
+        default: [],
+    },
+
+    education: {
+        type: String,
+        default: "",
+        trim: true,
+    },
+
+    experience: {
+        type: String,
+        default: "",
+        trim: true,
+    },
+
+    portfolio: {
+        type: String,
+        default: "",
+        trim: true,
+    },
+
+    github: {
+        type: String,
+        default: "",
+        trim: true,
+    },
+
+    linkedin: {
+        type: String,
+        default: "",
+        trim: true,
+    },
+
     isVerified: {
         type: Boolean,
         default: false,
@@ -47,7 +107,6 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: "",
     },
-
 }, {
     timestamps: true,
 });

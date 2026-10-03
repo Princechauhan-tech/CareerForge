@@ -1,44 +1,33 @@
-import { useEffect } from "react";
-import { motion } from "framer-motion";
-import socket from "../services/socket";
-
+import Hero from "../components/home/Hero";
+import Features from "../components/home/Features";
+import Stats from "../components/home/Stats";
+import Jobs from "../components/home/Jobs";
+import CompanySlider from "../components/home/CompanySlider";
+import Testimonials from "../components/home/Testimonials";
+import CTA from "../components/home/CTA";
+import HowItWorks from "../components/home/HowItWorks";
+import TopCategories from "../components/home/TopCategories";
 const Home = () => {
-  useEffect(() => {
-    console.log("Home Mounted");
-
-    socket.on("connect", () => {
-      console.log("🟢 Connected:", socket.id);
-    });
-
-    socket.on("connect_error", (err) => {
-      console.log("❌ Socket Error:", err.message);
-    });
-
-    socket.on("disconnect", () => {
-      console.log("🔴 Disconnected");
-    });
-
-    return () => {
-      socket.off("connect");
-      socket.off("connect_error");
-      socket.off("disconnect");
-    };
-  }, []);
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8 }}
-      style={{
-        padding: "40px",
-        textAlign: "center",
-      }}
-    >
-      <h1>🏠 CareerForge Home Page</h1>
+    <>
+      <Hero />
 
-      <p>Welcome to CareerForge Job Portal.</p>
-    </motion.div>
+      <CompanySlider />
+
+      <TopCategories />
+
+      <HowItWorks />
+
+      <Features />
+
+      <Jobs />
+
+      <Stats />
+
+      <Testimonials />
+
+      <CTA />
+    </>
   );
 };
 

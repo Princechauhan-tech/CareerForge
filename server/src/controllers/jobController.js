@@ -1,275 +1,435 @@
-import cache from "../services/cacheService.js";
 import Job from "../models/Job.js";
-import Company from "../models/Company.js";
 
 /*
-========================================
-Create Job
-POST /api/jobs
-Private (Company)
-========================================
+|--------------------------------------------------------------------------
+| Helper
+|--------------------------------------------------------------------------
 */
 
-export const createJob = async(req, res) => {
+const escapeRegex = (value = "") => {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
+const normalizeSkills = (skills) => {
+    if (!skills) return [];
+
+    if (Array.isArray(skills)) {
+        return skills
+            .map((skill) => String(skill).trim())
+            .filter(Boolean);
+    }
+
+    return String(skills)
+        .split(",")
+        .map((skill) => skill.trim())
+        .filter(Boolean);
+};
+
+/*
+|--------------------------------------------------------------------------
+| GET ALL JOBS
+| GET /api/jobs
+|--------------------------------------------------------------------------
+*/
+
+export const getJobs = async(req, res) => {
     try {
         const {
-            title,
-            description,
-            location,
-            jobType,
-            experienceLevel,
-            salary,
-            skills,
-            vacancies,
-            applicationDeadline,
-        } = req.body;
+            search = "",
+                location = "",
+                jobType = "",
+                experience = "",
+                category = "",
+                skills = "",
+                minSalary = "",
+                maxSalary = "",
+                status = "Open",
+                page = 1,
+                limit = 12,
+                sort = "latest",
+        } = req.query;
 
-        // Find company of logged in user
-        const company = await Company.findOne({
-            owner: req.user.id,
-        });
+        const currentPage = Math.max(Number(page) || 1, 1);
+        const perPage = Math.min(
+            Math.max(Number(limit) || 12, 1),
+            50
+        );
 
-        if (!company) {
-            return res.status(404).json({
-                success: false,
-                message: "Company profile not found",
-            });
+        const skip = (currentPage - 1) * perPage;
+
+        const filter = {};
+
+        /*
+        |--------------------------------------------------------------------------
+        | Status
+        |--------------------------------------------------------------------------
+        */
+
+        if (status && status !== "all") {
+            filter.status = status;
         }
 
-        // Create Job
-        const job = await Job.create({
-            title,
-            description,
-            company: company._id,
-            createdBy: req.user.id,
-            location,
-            jobType,
-            experienceLevel,
-            salary,
-            skills,
-            vacancies,
-            applicationDeadline,
-        });
-        cache.del("allJobs");
-        console.log("🗑 Cache Cleared");
+        /*
+        |--------------------------------------------------------------------------
+        | Search
+        |--------------------------------------------------------------------------
+        */
 
-        return res.status(201).json({
-            success: true,
-            message: "Job created successfully",
-            job,
-        });
+        if (search.trim()) {
+            const searchRegex = new RegExp(
+                escapeRegex(search.trim()),
+                "i"
+            );
 
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message,
-        });
-    }
-};
-/*
-========================================
-Update Job
-PUT /api/jobs/:id
-Private (Company)
-========================================
-*/
-
-export const updateJob = async(req, res) => {
-    try {
-        const job = await Job.findById(req.params.id);
-        cache.del("allJobs");
-        console.log("🗑 Cache Cleared");
-        if (!job) {
-            return res.status(404).json({
-                success: false,
-                message: "Job not found",
-            });
+            filter.$or = [
+                { title: searchRegex },
+                { description: searchRegex },
+                { companyName: searchRegex },
+                { location: searchRegex },
+                { category: searchRegex },
+                { skills: searchRegex },
+            ];
         }
 
-        // Sirf jis company ne job create ki hai wahi update kar sakti hai
-        if (job.createdBy.toString() !== req.user.id) {
-            return res.status(403).json({
-                success: false,
-                message: "Access denied",
-            });
+        /*
+        |--------------------------------------------------------------------------
+        | Location
+        |--------------------------------------------------------------------------
+        */
+
+        if (location.trim()) {
+            filter.location = new RegExp(
+                escapeRegex(location.trim()),
+                "i"
+            );
         }
 
-        const updatedJob = await Job.findByIdAndUpdate(
-            req.params.id,
-            req.body, {
-                new: true,
-                runValidators: true,
+        /*
+        |--------------------------------------------------------------------------
+        | Job Type
+        |--------------------------------------------------------------------------
+        */
+
+        if (jobType.trim()) {
+            filter.jobType = jobType.trim();
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Experience
+        |--------------------------------------------------------------------------
+        */
+
+        if (experience.trim()) {
+            filter.experience = new RegExp(
+                `^${escapeRegex(experience.trim())}$`,
+                "i"
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Category
+        |--------------------------------------------------------------------------
+        */
+
+        if (category.trim()) {
+            filter.category = new RegExp(
+                `^${escapeRegex(category.trim())}$`,
+                "i"
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Skills
+        |--------------------------------------------------------------------------
+        */
+
+        const requestedSkills = normalizeSkills(skills);
+
+        if (requestedSkills.length > 0) {
+            filter.skills = {
+                $all: requestedSkills,
+            };
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Salary
+        |--------------------------------------------------------------------------
+        */
+
+        if (minSalary !== "") {
+            const minimum = Number(minSalary);
+
+            if (!Number.isNaN(minimum)) {
+                filter.salaryMax = {
+                    $gte: minimum,
+                };
             }
+        }
+
+        if (maxSalary !== "") {
+            const maximum = Number(maxSalary);
+
+            if (!Number.isNaN(maximum)) {
+                filter.salaryMin = {
+                    $lte: maximum,
+                };
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Sorting
+        |--------------------------------------------------------------------------
+        */
+
+        let sortOption = {
+            createdAt: -1,
+        };
+
+        if (sort === "oldest") {
+            sortOption = {
+                createdAt: 1,
+            };
+        }
+
+        if (sort === "salary-high") {
+            sortOption = {
+                salaryMax: -1,
+            };
+        }
+
+        if (sort === "salary-low") {
+            sortOption = {
+                salaryMin: 1,
+            };
+        }
+
+        if (sort === "featured") {
+            sortOption = {
+                isFeatured: -1,
+                createdAt: -1,
+            };
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Query
+        |--------------------------------------------------------------------------
+        */
+
+        const [jobs, totalJobs] = await Promise.all([
+            Job.find(filter)
+            .populate(
+                "company",
+                "name email logo companyLogo website location"
+            )
+            .sort(sortOption)
+            .skip(skip)
+            .limit(perPage)
+            .lean(),
+
+            Job.countDocuments(filter),
+        ]);
+
+        const totalPages = Math.ceil(
+            totalJobs / perPage
         );
 
         return res.status(200).json({
             success: true,
-            message: "Job updated successfully",
-            job: updatedJob,
-        });
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message,
-        });
-    }
-};
-
-/*
-========================================
-Delete Job
-DELETE /api/jobs/:id
-Private (Company)
-========================================
-*/
-
-export const deleteJob = async(req, res) => {
-    try {
-        const job = await Job.findById(req.params.id);
-        cache.del("allJobs");
-        console.log("🗑 Cache Cleared");
-        if (!job) {
-            return res.status(404).json({
-                success: false,
-                message: "Job not found",
-            });
-        }
-
-        // Sirf owner delete kar sakta hai
-        if (job.createdBy.toString() !== req.user.id) {
-            return res.status(403).json({
-                success: false,
-                message: "Access denied",
-            });
-        }
-
-        await Job.findByIdAndDelete(req.params.id);
-
-        return res.status(200).json({
-            success: true,
-            message: "Job deleted successfully",
-        });
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message,
-        });
-    }
-};
-/*
-========================================
-Get All Jobs
-GET /api/jobs
-Public
-========================================
-*/
-export const getAllJobs = async(req, res) => {
-    try {
-
-        console.log("Cache Keys:", cache.keys());
-
-        const cachedJobs = cache.get("allJobs");
-
-        if (cachedJobs) {
-            console.log("⚡ Jobs fetched from Cache");
-
-            return res.status(200).json({
-                success: true,
-                source: "cache",
-                count: cachedJobs.length,
-                jobs: cachedJobs,
-            });
-        }
-
-        const jobs = await Job.find()
-            .populate("company")
-            .sort({ createdAt: -1 });
-
-        cache.set("allJobs", jobs);
-
-        console.log("✅ Cache Saved");
-        console.log("📦 Jobs fetched from Database");
-
-        return res.status(200).json({
-            success: true,
-            source: "database",
-            count: jobs.length,
+            message: "Jobs fetched successfully.",
             jobs,
+            pagination: {
+                currentPage,
+                totalPages,
+                totalJobs,
+                perPage,
+                hasNextPage: currentPage < totalPages,
+                hasPreviousPage: currentPage > 1,
+            },
         });
-
     } catch (error) {
+        console.error(
+            "Get jobs error:",
+            error
+        );
+
         return res.status(500).json({
             success: false,
-            message: error.message,
+            message: "Unable to fetch jobs.",
+            error: process.env.NODE_ENV === "development" ?
+                error.message : undefined,
         });
     }
 };
 
 /*
-========================================
-Get Single Job
-GET /api/jobs/:id
-Public
-========================================
+|--------------------------------------------------------------------------
+| GET SINGLE JOB
+| GET /api/jobs/:id
+|--------------------------------------------------------------------------
 */
-export const getSingleJob = async(req, res) => {
+
+export const getJobById = async(req, res) => {
     try {
-        const job = await Job.findById(req.params.id).populate("company");
+        const { id } = req.params;
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: "Job ID is required.",
+            });
+        }
+
+        const job = await Job.findById(id)
+            .populate(
+                "company",
+                "name email logo companyLogo website location description"
+            )
+            .lean();
 
         if (!job) {
             return res.status(404).json({
                 success: false,
-                message: "Job not found",
+                message: "Job not found.",
             });
         }
 
         return res.status(200).json({
             success: true,
+            message: "Job fetched successfully.",
             job,
         });
     } catch (error) {
+        console.error(
+            "Get job by ID error:",
+            error
+        );
+
         return res.status(500).json({
             success: false,
-            message: error.message,
+            message: "Unable to fetch job.",
         });
     }
 };
 
 /*
-========================================
-Get Company Jobs
-GET /api/jobs/company/my-jobs
-Private
-========================================
+|--------------------------------------------------------------------------
+| GET FEATURED JOBS
+| GET /api/jobs/featured
+|--------------------------------------------------------------------------
 */
-export const getCompanyJobs = async(req, res) => {
+
+export const getFeaturedJobs = async(
+    req,
+    res
+) => {
     try {
-        const company = await Company.findOne({
-            owner: req.user.id,
-        });
-
-        if (!company) {
-            return res.status(404).json({
-                success: false,
-                message: "Company profile not found",
-            });
-        }
-
         const jobs = await Job.find({
-            company: company._id,
-        }).sort({ createdAt: -1 });
+                status: "Open",
+                isFeatured: true,
+            })
+            .sort({
+                createdAt: -1,
+            })
+            .limit(6)
+            .populate(
+                "company",
+                "name logo companyLogo"
+            )
+            .lean();
 
         return res.status(200).json({
             success: true,
-            count: jobs.length,
             jobs,
         });
     } catch (error) {
+        console.error(
+            "Featured jobs error:",
+            error
+        );
+
         return res.status(500).json({
             success: false,
-            message: error.message,
+            message: "Unable to fetch featured jobs.",
         });
     }
 };
+
+/*
+|--------------------------------------------------------------------------
+| GET JOB FILTER OPTIONS
+| GET /api/jobs/meta/filters
+|--------------------------------------------------------------------------
+*/
+
+export const getJobFilterOptions = async(
+    req,
+    res
+) => {
+    try {
+        const [locations, categories, skills] =
+        await Promise.all([
+            Job.distinct("location", {
+                status: "Open",
+            }),
+
+            Job.distinct("category", {
+                status: "Open",
+            }),
+
+            Job.distinct("skills", {
+                status: "Open",
+            }),
+        ]);
+
+        return res.status(200).json({
+            success: true,
+
+            filters: {
+                locations: locations
+                    .filter(Boolean)
+                    .sort(),
+
+                categories: categories
+                    .filter(Boolean)
+                    .sort(),
+
+                skills: skills
+                    .filter(Boolean)
+                    .sort(),
+            },
+
+            jobTypes: [
+                "Full-Time",
+                "Part-Time",
+                "Internship",
+                "Contract",
+                "Freelance",
+            ],
+
+            experiences: [
+                "Fresher",
+                "0-1 Years",
+                "1-3 Years",
+                "3-5 Years",
+                "5+ Years",
+            ],
+        });
+    } catch (error) {
+        console.error(
+            "Job filter options error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to fetch filter options.",
+        });
+    }
+};
+

@@ -24,3 +24,4 @@ export const getResume = async(req, res) => {
         });
     }
 };
+

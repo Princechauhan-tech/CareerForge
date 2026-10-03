@@ -26,3 +26,4 @@ export const uploadResume = async(req, res, next) => {
         next(error);
     }
 };
+

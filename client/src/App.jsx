@@ -8,18 +8,20 @@ function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const user = JSON.parse(localStorage.getItem("user"));
+  const token = localStorage.getItem("token");
 
-    if (token && user) {
-      dispatch(
-        setCredentials({
-          token,
-          user,
-        })
-      );
-    }
-  }, [dispatch]);
+  let user = null;
+
+  try {
+    user = JSON.parse(localStorage.getItem("user"));
+  } catch {
+    user = null;
+  }
+
+  if (token && user) {
+    dispatch(setCredentials({ token, user }));
+  }
+}, [dispatch]);
 
   return <AppRoutes />;
 }

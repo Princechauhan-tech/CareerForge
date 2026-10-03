@@ -1,51 +1,69 @@
 import express from "express";
 
 import {
-    applyJob,
-    getMyApplications,
-    scheduleInterview,
-} from "../controllers/applicationController.js";
-
-import {
     verifyToken,
     authorizeRoles,
 } from "../middlewares/authMiddleware.js";
 
+import {
+    applyForJob,
+    getMyApplications,
+    getApplicationById,
+    withdrawApplication,
+} from "../controllers/applicationController.js";
+
 const router = express.Router();
 
-/*
-========================================
-Student Routes
-========================================
-*/
+// =====================================================
+// STUDENT APPLICATIONS
+// =====================================================
 
-// Apply Job
+// -----------------------------------------------------
+// APPLY FOR JOB
+// POST /api/applications/:jobId
+// -----------------------------------------------------
+
 router.post(
     "/:jobId",
     verifyToken,
     authorizeRoles("Student"),
-    applyJob
+    applyForJob
 );
 
-// My Applications
+// -----------------------------------------------------
+// MY APPLICATIONS
+// GET /api/applications/my
+// -----------------------------------------------------
+
 router.get(
-    "/my-applications",
+    "/my",
     verifyToken,
     authorizeRoles("Student"),
     getMyApplications
 );
-/*
-========================================
-Schedule Interview
-PUT /api/applications/schedule/:applicationId
-Private (Company)
-========================================
-*/
 
-router.put(
-    "/schedule/:applicationId",
+// -----------------------------------------------------
+// GET SINGLE APPLICATION
+// GET /api/applications/:id
+// -----------------------------------------------------
+
+router.get(
+    "/:id",
     verifyToken,
-    authorizeRoles("Company"),
-    scheduleInterview
+    authorizeRoles("Student"),
+    getApplicationById
 );
+
+// -----------------------------------------------------
+// WITHDRAW APPLICATION
+// DELETE /api/applications/:id/withdraw
+// -----------------------------------------------------
+
+router.delete(
+    "/:id/withdraw",
+    verifyToken,
+    authorizeRoles("Student"),
+    withdrawApplication
+);
+
 export default router;

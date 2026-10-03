@@ -1,86 +1,184 @@
+import mongoose from "mongoose";
+
 import Company from "../models/Company.js";
 import Job from "../models/Job.js";
 import Application from "../models/Application.js";
 
-/*
-========================================
-Company Dashboard
-GET /api/company/dashboard
-Private (Company)
-========================================
-*/
+const getUserId = (req) => {
+    return (
+        req.user ?.id ||
+        req.user ?._id ||
+        req.user ?.userId
+    );
+};
 
-export const getCompanyDashboard = async(req, res) => {
-    try {
+const isValidObjectId = (id) => {
+    return mongoose.Types.ObjectId.isValid(id);
+};
 
-        // Find Company
-        const company = await Company.findOne({
-            owner: req.user.id,
-        });
+// ============================================================
+// GET COMPANY DASHBOARD
+// GET /api/company/dashboard
+// ============================================================
 
-        if (!company) {
-            return res.status(404).json({
-                success: false,
-                message: "Company profile not found",
-            });
-        }
+export const getCompanyDashboard =
+    async(req, res) => {
+        try {
+            const ownerId =
+                getUserId(req);
 
-        // Company Jobs
-        const jobs = await Job.find({
-            company: company._id,
-        });
+            if (!ownerId) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Authenticated user not found.",
+                });
+            }
 
-        const totalJobs = jobs.length;
-        // Total Applications
-        const applications = await Application.find({
-                company: company._id,
-            })
-            .populate("job", "title")
-            .populate("applicant", "name email");
+            if (!isValidObjectId(ownerId)) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid authenticated user.",
+                });
+            }
 
-        const totalApplications = applications.length;
+            const company =
+                await Company.findOne({
+                    owner: ownerId,
+                }).lean();
 
-        const pendingApplications = applications.filter(
-            app => app.status === "Pending"
-        ).length;
+            if (!company) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Company profile not found.",
+                    company: null,
+                });
+            }
 
-        const acceptedApplications = applications.filter(
-            app => app.status === "Accepted"
-        ).length;
+            const companyId =
+                company._id;
 
-        const rejectedApplications = applications.filter(
-            app => app.status === "Rejected"
-        ).length;
-
-        // Recent Jobs
-        const recentJobs = await Job.find({
-                company: company._id,
-            })
-            .sort({ createdAt: -1 })
-            .limit(5);
-
-        // Recent Applications
-        const recentApplications = applications
-            .sort((a, b) => b.createdAt - a.createdAt)
-            .slice(0, 5);
-
-        return res.status(200).json({
-            success: true,
-            dashboard: {
+            const [
                 totalJobs,
+                openJobs,
+                closedJobs,
+                draftJobs,
                 totalApplications,
                 pendingApplications,
-                acceptedApplications,
+                shortlistedApplications,
                 rejectedApplications,
+                acceptedApplications,
+                interviewApplications,
                 recentJobs,
                 recentApplications,
-            },
-        });
+            ] = await Promise.all([
+                Job.countDocuments({
+                    company: companyId,
+                }),
 
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message,
-        });
-    }
-};
+                Job.countDocuments({
+                    company: companyId,
+                    status: "Open",
+                }),
+
+                Job.countDocuments({
+                    company: companyId,
+                    status: "Closed",
+                }),
+
+                Job.countDocuments({
+                    company: companyId,
+                    status: "Draft",
+                }),
+
+                Application.countDocuments({
+                    company: companyId,
+                }),
+
+                Application.countDocuments({
+                    company: companyId,
+                    status: "Pending",
+                }),
+
+                Application.countDocuments({
+                    company: companyId,
+                    status: "Shortlisted",
+                }),
+
+                Application.countDocuments({
+                    company: companyId,
+                    status: "Rejected",
+                }),
+
+                Application.countDocuments({
+                    company: companyId,
+                    status: "Accepted",
+                }),
+
+                Application.countDocuments({
+                    company: companyId,
+                    interviewStatus: "Scheduled",
+                }),
+
+                Job.find({
+                    company: companyId,
+                })
+                .sort({
+                    createdAt: -1,
+                })
+                .limit(5)
+                .lean(),
+
+                Application.find({
+                    company: companyId,
+                })
+                .populate(
+                    "student",
+                    "name fullName email profileImage"
+                )
+                .populate(
+                    "job",
+                    "title location jobType"
+                )
+                .sort({
+                    createdAt: -1,
+                })
+                .limit(8)
+                .lean(),
+            ]);
+
+            return res.status(200).json({
+                success: true,
+                message: "Company dashboard fetched successfully.",
+
+                company,
+
+                stats: {
+                    totalJobs,
+                    openJobs,
+                    closedJobs,
+                    draftJobs,
+                    totalApplications,
+                    pendingApplications,
+                    shortlistedApplications,
+                    rejectedApplications,
+                    acceptedApplications,
+                    interviewApplications,
+                },
+
+                recentJobs,
+
+                recentApplications,
+            });
+        } catch (error) {
+            console.error(
+                "getCompanyDashboard error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message: "Unable to load company dashboard.",
+            });
+        }
+    };
+

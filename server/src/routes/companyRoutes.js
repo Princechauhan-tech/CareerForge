@@ -1,11 +1,9 @@
-import upload from "../middlewares/upload.js";
 import express from "express";
 
 import {
+    getMyCompany,
     createCompany,
-    getCompanyProfile,
     updateCompany,
-    getAllCompanies,
     deleteCompany,
 } from "../controllers/companyController.js";
 
@@ -16,51 +14,30 @@ import {
 
 const router = express.Router();
 
-/*
-========================================
-Public Routes
-========================================
-*/
+// ============================================================
+// COMPANY PROFILE
+// ============================================================
 
-// Get All Companies
-router.get("/", getAllCompanies);
-
-/*
-========================================
-Company Protected Routes
-========================================
-*/
-
-// Create Company Profile
-router.post(
-    "/",
-    verifyToken,
-    authorizeRoles("Company"),
-    upload.single("logo"),
-    createCompany
-);
-// Get Company Profile
 router.get(
     "/profile",
     verifyToken,
     authorizeRoles("Company"),
-    getCompanyProfile
+    getMyCompany
 );
 
-// Update Company Profile
+router.post(
+    "/profile",
+    verifyToken,
+    authorizeRoles("Company"),
+    createCompany
+);
+
 router.put(
     "/profile",
     verifyToken,
     authorizeRoles("Company"),
-    upload.single("logo"),
     updateCompany
 );
-
-/*
-========================================
-Delete Company
-========================================
-*/
 
 router.delete(
     "/profile",

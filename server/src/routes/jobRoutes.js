@@ -1,68 +1,56 @@
 import express from "express";
 
 import {
-    createJob,
-    updateJob,
-    deleteJob,
-    getAllJobs,
-    getSingleJob,
-    getCompanyJobs,
+    getJobs,
+    getJobById,
+    getFeaturedJobs,
+    getJobFilterOptions,
 } from "../controllers/jobController.js";
-
-import {
-    verifyToken,
-    authorizeRoles,
-} from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
 /*
-========================================
-Public Routes
-========================================
+|--------------------------------------------------------------------------
+| Featured Jobs
+|--------------------------------------------------------------------------
 */
 
-// Get All Jobs
-router.get("/", getAllJobs);
-
-// Get Single Job
-router.get("/:id", getSingleJob);
-/*
-========================================
-Company Protected Routes
-========================================
-*/
-
-// Create Job
-router.post(
-    "/",
-    verifyToken,
-    authorizeRoles("Company"),
-    createJob
-);
-
-// Get Company Jobs
 router.get(
-    "/company/my-jobs",
-    verifyToken,
-    authorizeRoles("Company"),
-    getCompanyJobs
+    "/featured",
+    getFeaturedJobs
 );
 
-// Update Job
-router.put(
-    "/:id",
-    verifyToken,
-    authorizeRoles("Company"),
-    updateJob
+/*
+|--------------------------------------------------------------------------
+| Filter Metadata
+|--------------------------------------------------------------------------
+*/
+
+router.get(
+    "/meta/filters",
+    getJobFilterOptions
 );
 
-// Delete Job
-router.delete(
+/*
+|--------------------------------------------------------------------------
+| All Jobs / Search / Filters
+|--------------------------------------------------------------------------
+*/
+
+router.get(
+    "/",
+    getJobs
+);
+
+/*
+|--------------------------------------------------------------------------
+| Single Job
+|--------------------------------------------------------------------------
+*/
+
+router.get(
     "/:id",
-    verifyToken,
-    authorizeRoles("Company"),
-    deleteJob
+    getJobById
 );
 
 export default router;

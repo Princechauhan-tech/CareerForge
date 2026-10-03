@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import cors from "cors";
 
 import authRoutes from "./routes/authRoutes.js";
@@ -15,22 +15,37 @@ import searchRoutes from "./routes/searchRoutes.js";
 import filterRoutes from "./routes/filterRoutes.js";
 import paginationRoutes from "./routes/paginationRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
-
+import calendarRoutes from "./routes/calendarRoutes.js";
 import errorHandler from "./middlewares/errorMiddleware.js";
 import ApiError from "./utils/ApiError.js";
+import companyJobRoutes from "./routes/companyJobRoutes.js";
+import companyApplicationRoutes from "./routes/companyApplicationRoutes.js";
 
 const app = express();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+
+app.use(cors({
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ""))) {
+            return callback(null, true);
+        }
+
+        return callback(new Error("Origin not allowed by CORS"));
+    },
+    credentials: true,
+}));
+
+app.use(express.json({ limit: "2mb" }));
 
 app.use((req, res, next) => {
-    console.log("➡️", req.method, req.url);
+    console.log(req.method, req.url);
     next();
 });
 
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/company", companyRoutes);
 app.use("/api/jobs", jobRoutes);
@@ -45,17 +60,18 @@ app.use("/api/search", searchRoutes);
 app.use("/api/filter", filterRoutes);
 app.use("/api/pagination", paginationRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/calendar", calendarRoutes);
+app.use("/api/company/jobs", companyJobRoutes);
+app.use("/api/company/applications", companyApplicationRoutes);
 
-// Default Route
 app.get("/", (req, res) => {
     res.send("CareerForge Backend Running...");
 });
 
-// 404 Route
 app.use((req, res, next) => {
     next(new ApiError(404, "Route Not Found"));
 });
-// Global Error Handler
+
 app.use(errorHandler);
 
 export default app;

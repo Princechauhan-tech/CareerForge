@@ -29,3 +29,4 @@ export const getPaginatedJobs = async(req, res) => {
         });
     }
 };
+
